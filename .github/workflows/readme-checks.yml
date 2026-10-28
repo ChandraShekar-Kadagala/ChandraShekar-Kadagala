@@ -29,7 +29,7 @@ jobs:
       - name: Check links, badges and images
         uses: lycheeverse/lychee-action@v2
         with:
-          # LinkedIn answers bots with HTTP 999, and mailto links can't be checked.
+          # LinkedIn answers bots with HTTP 999. Mail links are skipped by default.
           args: >-
             --no-progress
             --max-retries 3
@@ -37,7 +37,6 @@ jobs:
             --timeout 20
             --accept 200,204,206,429
             --exclude "linkedin\.com"
-            --exclude-mail
             README.md
           output: lychee/out.md
           fail: true
