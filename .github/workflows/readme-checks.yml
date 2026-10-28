@@ -39,6 +39,7 @@ jobs:
             --exclude "linkedin\.com"
             --exclude-mail
             README.md
+          output: lychee/out.md
           fail: true
         env:
           # Built-in token, read-only. Only used to avoid rate limits on github.com links.
@@ -47,10 +48,13 @@ jobs:
       - name: List broken links as annotations
         if: failure()
         run: |
-          # Surfaces each failing URL on the run page, so nobody has to dig through logs.
-          grep -E '\[(ERROR|TIMEOUT|[0-9]{3})\]|✗|❌' lychee/out.md | while IFS= read -r line; do
-            echo "::error title=Broken link::${line}"
-          done || true
+          # Puts lychee's report on the run page, so nobody has to dig through logs.
+          f=lychee/out.md
+          [ -f "$f" ] || { echo "::error title=Broken links::No lychee report found at $f"; exit 0; }
+          report=$(grep -v '^\s*$' "$f" | head -60)
+          report="${report//'%'/'%25'}"
+          report="${report//$'\n'/'%0A'}"
+          echo "::error title=Broken links::${report}"
 
   markdown:
     runs-on: ubuntu-latest
