@@ -44,6 +44,14 @@ jobs:
           # Built-in token, read-only. Only used to avoid rate limits on github.com links.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: List broken links as annotations
+        if: failure()
+        run: |
+          # Surfaces each failing URL on the run page, so nobody has to dig through logs.
+          grep -E '\[(ERROR|TIMEOUT|[0-9]{3})\]|✗|❌' lychee/out.md | while IFS= read -r line; do
+            echo "::error title=Broken link::${line}"
+          done || true
+
   markdown:
     runs-on: ubuntu-latest
     timeout-minutes: 5
