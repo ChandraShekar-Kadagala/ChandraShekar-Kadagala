@@ -1,0 +1,58 @@
+# Checks the profile README for broken links, broken badge/image URLs and
+# Markdown formatting problems. It never commits anything.
+name: README checks
+
+on:
+  push:
+    branches: [main]
+    paths: ["README.md", "assets/**", ".github/workflows/readme-checks.yml"]
+  pull_request:
+    paths: ["README.md", "assets/**"]
+  schedule:
+    - cron: "30 3 * * 1" # Mondays 03:30 UTC (09:00 IST): catches links that rot over time
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: readme-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check links, badges and images
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # LinkedIn answers bots with HTTP 999, and mailto links can't be checked.
+          args: >-
+            --no-progress
+            --max-retries 3
+            --retry-wait-time 5
+            --timeout 20
+            --accept 200,204,206,429
+            --exclude "linkedin\.com"
+            --exclude-mail
+            README.md
+          fail: true
+        env:
+          # Built-in token, read-only. Only used to avoid rate limits on github.com links.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  markdown:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint Markdown
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: README.md
+          # The profile README uses inline HTML for centring and images, and long lines on purpose.
+          config: .markdownlint.jsonc
